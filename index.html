@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Toolkit — Split & Merge</title>
+<title>PDF Toolkit — Split, Merge & 4-Up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --ink: #142236;
@@ -80,7 +81,7 @@
     margin: 0 0 6px;
     color: #ffffff;
   }
-  .sub{ color: #aab6cc; font-size: 14.5px; max-width: 46ch; line-height:1.5; }
+  .sub{ color: #aab6cc; font-size: 14.5px; max-width: 52ch; line-height:1.5; }
 
   .card{
     background: var(--paper);
@@ -89,6 +90,7 @@
     border: 1px solid #e3e8ef;
   }
 
+  /* Dropzone */
   .dropzone{
     padding: 40px 20px;
     text-align:center;
@@ -104,40 +106,42 @@
   .dropzone .icon svg{ width:100%; height:100%; }
   .dropzone .label{ font-family: var(--font-display); font-weight:600; font-size:16px; }
   .dropzone .hint{ color: var(--ink-soft); font-size: 13px; margin-top:4px; }
-  #fileInput, #mergeFileInput{ display:none; }
+  #fileInput, #mergeFileInput, #upFileInput{ display:none; }
 
-  #fileBar{
+  /* Loaded file bar */
+  .file-bar{
     display:none;
     align-items:center;
     justify-content:space-between;
     padding: 14px 18px;
     gap: 12px;
   }
-  #fileBar .info{ display:flex; align-items:center; gap:12px; min-width:0; }
-  #fileBar .stub{
-    width:34px; height:42px; flex:0 0 auto;
+  .file-bar .info{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .file-bar .stub{
+    width:34px; height:42px; flex: 0 0 auto;
     background: var(--field);
     border: 1px solid #dde3ea;
     border-radius: 3px;
     position: relative;
   }
-  #fileBar .stub::after{
+  .file-bar .stub::after{
     content:"";
     position:absolute; left:6px; right:6px; top:10px;
     height:1px; background: #c7d0db;
     box-shadow: 0 5px 0 #c7d0db, 0 10px 0 #c7d0db, 0 15px 0 #c7d0db;
   }
-  #fileBar .meta{ min-width:0; }
-  #fileBar .fname{ font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 340px; }
-  #fileBar .fcount{ font-family: var(--font-mono); font-size:12px; color: var(--ink-soft); margin-top:2px; }
-  #fileBar button.linklike{
+  .file-bar .meta{ min-width:0; }
+  .file-bar .fname{ font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 340px; }
+  .file-bar .fcount{ font-family: var(--font-mono); font-size:12px; color: var(--ink-soft); margin-top:2px; }
+  .file-bar button.linklike{
     background:none; border:none; color: var(--ink-soft); font-size: 13px;
     cursor:pointer; text-decoration: underline; text-underline-offset:2px;
     font-family: var(--font-body);
     flex: 0 0 auto;
   }
-  #fileBar button.linklike:hover{ color: var(--cut); }
+  .file-bar button.linklike:hover{ color: var(--cut); }
 
+  /* Tabs */
   .tab-row{ display:flex; gap:8px; margin-bottom: 18px; }
   .tab-btn{
     flex:1;
@@ -155,6 +159,7 @@
   .tab-btn:hover{ border-color: rgba(224,72,63,0.55); color:#fff; }
   .tab-btn.active{ background: var(--cut); border-color: var(--cut); color:#fff; }
 
+  /* Merge list */
   .merge-list{
     display:flex; flex-direction:column; gap:8px;
     margin: 14px 0 18px;
@@ -170,10 +175,10 @@
   }
   .merge-item .idx{
     font-family: var(--font-mono); font-size:12px;
-    color: var(--ink-soft); width:16px; text-align:center; flex:0 0 auto;
+    color: var(--ink-soft); width:16px; text-align:center; flex: 0 0 auto;
   }
   .merge-item .stub{
-    width:28px; height:36px; flex:0 0 auto;
+    width:28px; height:36px; flex: 0 0 auto;
     background:#fff; border:1px solid #dde3ea; border-radius:3px; position:relative;
   }
   .merge-item .stub::after{
@@ -185,7 +190,7 @@
   .merge-item .meta{ min-width:0; flex:1; }
   .merge-item .fname{ font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .merge-item .fcount{ font-family: var(--font-mono); font-size:11.5px; color: var(--ink-soft); margin-top:2px; }
-  .merge-actions{ display:flex; gap:4px; flex:0 0 auto; }
+  .merge-actions{ display:flex; gap:4px; flex: 0 0 auto; }
   .icon-btn{
     width:26px; height:26px; border-radius:6px;
     border:1px solid #dde3ea; background:#fff; color: var(--ink-soft);
@@ -206,7 +211,7 @@
   }
   .add-more-btn:hover{ border-color: var(--cut); color: var(--cut-dark); }
 
-  #controls{ display:none; margin-top: 18px; }
+  #controls, #upControls{ display:none; margin-top: 18px; }
 
   .section-title{
     font-family: var(--font-mono);
@@ -237,6 +242,7 @@
     text-align:center;
   }
   .quick-btn:hover{ border-color: var(--cut); color: var(--cut-dark); }
+  .quick-btn.active{ background: var(--ink); color:#fff; border-color: var(--ink); }
 
   .range-row{
     display:flex; gap:8px; margin-bottom: 18px;
@@ -253,6 +259,44 @@
   }
   .range-row input:focus{ outline: 2px solid var(--cut); outline-offset: 1px; background: #fff; }
   .range-row input::placeholder{ color: #9fabbb; }
+
+  /* 4-up layout picker + settings */
+  .layout-grid{
+    display:grid; grid-template-columns: repeat(4,1fr);
+    gap:8px; margin-bottom:18px;
+  }
+  .layout-opt{
+    padding: 12px 6px;
+    border-radius: 8px;
+    border: 1px solid #dde3ea;
+    background: var(--field);
+    cursor:pointer; text-align:center;
+    color: var(--ink); font-family: var(--font-body);
+    transition: all .12s ease;
+  }
+  .layout-opt:hover{ border-color: var(--cut); }
+  .layout-opt.active{ border-color: var(--cut); background:#fff5f4; }
+  .layout-opt .t{ font-family: var(--font-display); font-weight:600; font-size:14.5px; }
+  .layout-opt .d{ font-size:11px; color: var(--ink-soft); margin-top:2px; }
+
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .field-label{
+    display:block;
+    font-family: var(--font-mono);
+    font-size: 10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color: var(--ink-soft); margin-bottom:6px;
+  }
+  .field select, .field input{
+    width:100%;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 1px solid #dde3ea;
+    background: var(--field);
+    color: var(--ink);
+  }
+  .field select:focus, .field input:focus{ outline: 2px solid var(--cut); outline-offset: 1px; background:#fff; }
 
   #pageGrid{
     display:grid;
@@ -306,9 +350,7 @@
     border-radius: 3px;
     pointer-events:none;
   }
-  .chip.on{
-    border-color: var(--ink);
-  }
+  .chip.on{ border-color: var(--ink); }
   .chip.on::after{
     content:"";
     position:absolute; inset:0;
@@ -316,9 +358,7 @@
     border-radius: 6px;
     pointer-events:none;
   }
-  .chip.on .num{
-    background: var(--cut);
-  }
+  .chip.on .num{ background: var(--cut); }
 
   .divider{ height:1px; background: #eceff3; margin: 4px 0 18px; }
 
@@ -350,6 +390,8 @@
   .print-toggle input{ margin-top: 3px; flex: 0 0 auto; accent-color: var(--cut); width:15px; height:15px; }
   .print-toggle .t{ font-weight:600; font-size: 13.5px; }
   .print-toggle .d{ font-size: 12px; color: var(--ink-soft); margin-top: 2px; line-height:1.45; }
+  .print-toggle.is-disabled{ opacity: .5; }
+  .print-toggle.is-disabled input{ cursor: not-allowed; }
 
   .summary-line{
     font-family: var(--font-mono);
@@ -377,10 +419,7 @@
   .primary-btn:active{ transform: translateY(1px); }
   .primary-btn:disabled{ background:#c9cfd8; cursor:not-allowed; }
 
-  .progress-wrap{
-    display: none;
-    margin-top: 12px;
-  }
+  .progress-wrap{ display: none; margin-top: 12px; }
   .progress-wrap.show{ display: block; }
   .progress-track{
     height: 6px;
@@ -407,7 +446,7 @@
 
   .cardpad{ padding: 20px 22px 22px; }
 
-  #status, .status-line{
+  #status, #mergeStatus, #upStatus, .status-line{
     font-family: var(--font-mono);
     font-size: 12px;
     text-align:center;
@@ -421,23 +460,12 @@
   ::-webkit-scrollbar{ width:8px; height:8px; }
   ::-webkit-scrollbar-thumb{ background:#d6dee8; border-radius:4px; }
 
-  .file-badge{
-    font-size: 9px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-left: 6px;
-    display: inline-block;
-  }
-  .file-badge.pdf{ background: #fee2e2; color: #dc2626; }
-  .file-badge.image{ background: #dbeafe; color: #2563eb; }
-
   @media (max-width: 480px){
     .quick-row{ grid-template-columns: repeat(2,1fr); }
     .mode-row{ flex-direction: column; }
-    .tab-btn{ font-size:13px; padding:11px 8px; }
+    .tab-btn{ font-size:12.5px; padding:11px 6px; }
+    .layout-grid{ grid-template-columns: repeat(2,1fr); }
+    .field-row{ grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -456,100 +484,109 @@
   <header>
     <div class="eyebrow">browser-based pdf tools</div>
     <h1>PDF Toolkit</h1>
-    <div class="sub">Split a PDF into chosen pages, or merge multiple PDFs and images into one document. Everything runs in your browser — files never leave your device.</div>
+    <div class="sub">Split a PDF into chosen pages, merge multiple PDFs into one, or lay pages out several-per-sheet for printing. Everything runs in your browser — files never leave your device.</div>
   </header>
 
   <div class="tab-row">
     <button class="tab-btn active" id="tabSplitBtn" data-view="split" type="button">Split PDF</button>
-    <button class="tab-btn" id="tabMergeBtn" data-view="merge" type="button">Merge PDFs &amp; Images</button>
+    <button class="tab-btn" id="tabMergeBtn" data-view="merge" type="button">Merge PDFs</button>
+    <button class="tab-btn" id="tabUpBtn" data-view="fourup" type="button">4-Up Layout</button>
   </div>
 
-  <!-- SPLIT VIEW -->
+  <!-- ============================ SPLIT ============================ -->
   <div id="splitView">
-    <div class="card">
-      <div id="dropzone" class="dropzone">
-        <div class="icon">
-          <svg viewBox="0 0 46 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 4h26l12 12v38a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f4f6f9" stroke="#c7d0db" stroke-width="2"/>
-            <path d="M30 4v10a2 2 0 0 0 2 2h10" stroke="#c7d0db" stroke-width="2" fill="none"/>
-            <line x1="10" y1="32" x2="30" y2="32" stroke="#c7d0db" stroke-width="2"/>
-            <line x1="10" y1="39" x2="30" y2="39" stroke="#c7d0db" stroke-width="2"/>
-            <line x1="10" y1="46" x2="22" y2="46" stroke="#c7d0db" stroke-width="2"/>
-          </svg>
-        </div>
-        <div class="label">Drop a PDF here, or click to choose</div>
-        <div class="hint">Single file · stays on your device</div>
-        <input type="file" id="fileInput" accept="application/pdf">
+  <div class="card">
+    <div id="dropzone" class="dropzone">
+      <div class="icon">
+        <svg viewBox="0 0 46 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 4h26l12 12v38a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f4f6f9" stroke="#c7d0db" stroke-width="2"/>
+          <path d="M30 4v10a2 2 0 0 0 2 2h10" stroke="#c7d0db" stroke-width="2" fill="none"/>
+          <line x1="10" y1="32" x2="30" y2="32" stroke="#c7d0db" stroke-width="2"/>
+          <line x1="10" y1="39" x2="30" y2="39" stroke="#c7d0db" stroke-width="2"/>
+          <line x1="10" y1="46" x2="22" y2="46" stroke="#c7d0db" stroke-width="2"/>
+        </svg>
       </div>
-      <div id="fileBar">
-        <div class="info">
-          <div class="stub"></div>
-          <div class="meta">
-            <div class="fname" id="fname">document.pdf</div>
-            <div class="fcount" id="fcount">0 pages</div>
-          </div>
-        </div>
-        <button class="linklike" id="changeFile">change file</button>
-      </div>
+      <div class="label">Drop a PDF here, or click to choose</div>
+      <div class="hint">Single file · stays on your device</div>
+      <input type="file" id="fileInput" accept="application/pdf">
     </div>
 
-    <div id="controls">
-      <div class="card cardpad">
-        <div class="section-title">Quick select</div>
-        <div class="quick-row">
-          <button class="quick-btn" data-quick="all">All pages</button>
-          <button class="quick-btn" data-quick="odd">Odd pages</button>
-          <button class="quick-btn" data-quick="even">Even pages</button>
-          <button class="quick-btn" data-quick="none">Clear</button>
+    <div id="fileBar" class="file-bar">
+      <div class="info">
+        <div class="stub"></div>
+        <div class="meta">
+          <div class="fname" id="fname">document.pdf</div>
+          <div class="fcount" id="fcount">0 pages</div>
         </div>
-
-        <div class="section-title">Or type page numbers / ranges</div>
-        <div class="range-row">
-          <input type="text" id="rangeInput" placeholder="e.g. 1-3, 5, 9-12">
-        </div>
-
-        <div class="section-title">Or click pages below</div>
-        <div id="pageGrid"></div>
-
-        <div class="divider"></div>
-
-        <div class="section-title">Output</div>
-        <div class="mode-row">
-          <div class="mode-opt active" data-mode="single">
-            <div class="t">One combined PDF</div>
-            <div class="d">Selected pages merged into a single file, in order.</div>
-          </div>
-          <div class="mode-opt" data-mode="separate">
-            <div class="t">Separate PDF per page</div>
-            <div class="d">Each selected page as its own file, delivered as a .zip.</div>
-          </div>
-        </div>
-
-        <div class="section-title">Color &amp; printing</div>
-        <label class="print-toggle">
-          <input type="checkbox" id="grayscaleMode">
-          <span>
-            <span class="t">Convert to grayscale</span>
-            <span class="d">Every selected page is rendered in clean, high-contrast black &amp; white, print-ready.</span>
-          </span>
-        </label>
-
-        <div id="summary" class="summary-line"><b>0</b> of <b>0</b> pages selected</div>
-
-        <button id="downloadBtn" class="primary-btn" disabled>Select pages to continue</button>
-        <div id="progressWrap" class="progress-wrap">
-          <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
-          <div class="progress-labels">
-            <span id="progressPct">0%</span>
-            <span id="progressTime"></span>
-          </div>
-        </div>
-        <div id="status" class="status-line"></div>
       </div>
+      <button class="linklike" id="changeFile">change file</button>
     </div>
   </div>
 
-  <!-- MERGE VIEW -->
+  <div id="controls">
+    <div class="card cardpad">
+      <div class="section-title">Quick select</div>
+      <div class="quick-row">
+        <button class="quick-btn" data-quick="all">All pages</button>
+        <button class="quick-btn" data-quick="odd">Odd pages</button>
+        <button class="quick-btn" data-quick="even">Even pages</button>
+        <button class="quick-btn" data-quick="none">Clear</button>
+      </div>
+
+      <div class="section-title">Or type page numbers / ranges</div>
+      <div class="range-row">
+        <input type="text" id="rangeInput" placeholder="e.g. 1-3, 5, 9-12">
+      </div>
+
+      <div class="section-title">Or click pages below</div>
+      <div id="pageGrid"></div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Output</div>
+      <div class="mode-row">
+        <div class="mode-opt active" data-mode="single">
+          <div class="t">One combined PDF</div>
+          <div class="d">Selected pages merged into a single file, in order.</div>
+        </div>
+        <div class="mode-opt" data-mode="separate">
+          <div class="t">Separate PDF per page</div>
+          <div class="d">Each selected page as its own file, delivered as a .zip.</div>
+        </div>
+      </div>
+
+      <div class="section-title">Color &amp; printing</div>
+      <label class="print-toggle">
+        <input type="checkbox" id="grayscaleMode">
+        <span>
+          <span class="t">Convert to grayscale</span>
+          <span class="d">Every selected page is rendered in clean, high-contrast black &amp; white, print-ready. Dark slide backgrounds are automatically flipped to white with the text/graphics on them rendered in solid black — nothing prints as a faint gray or wastes ink on a black background. Contrast is auto-leveled per page so light areas resolve to true white and dark areas to a solid, printable black.</span>
+        </span>
+      </label>
+      <label class="print-toggle" id="printFriendlyLabel">
+        <input type="checkbox" id="printFriendly">
+        <span>
+          <span class="t">Flip dark backgrounds to white (keep original colors otherwise)</span>
+          <span class="d">For when you don't want full grayscale but still want dark slide backgrounds fixed: finds pages with a black or dark background and flips them to white, keeping every other color as-is. Not needed when grayscale above is on — that already handles dark backgrounds automatically.</span>
+        </span>
+      </label>
+
+      <div id="summary" class="summary-line"><b>0</b> of <b>0</b> pages selected</div>
+
+      <button id="downloadBtn" class="primary-btn" disabled>Select pages to continue</button>
+      <div id="progressWrap" class="progress-wrap">
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+        <div class="progress-labels">
+          <span id="progressPct">0%</span>
+          <span id="progressTime"></span>
+        </div>
+      </div>
+      <div id="status" class="status-line"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ============================ MERGE ============================ -->
   <div id="mergeView" style="display:none">
     <div class="card">
       <div id="mergeDropzone" class="dropzone">
@@ -562,9 +599,9 @@
             <line x1="10" y1="39" x2="26" y2="39" stroke="#c7d0db" stroke-width="2"/>
           </svg>
         </div>
-        <div class="label">Drop PDFs or images here, or click to choose</div>
-        <div class="hint">Supports: PDF, PNG, JPG, JPEG, GIF, BMP, WebP · stays on your device</div>
-        <input type="file" id="mergeFileInput" accept="application/pdf,image/*" multiple>
+        <div class="label">Drop two or more PDFs here, or click to choose</div>
+        <div class="hint">Multiple files · stays on your device</div>
+        <input type="file" id="mergeFileInput" accept="application/pdf" multiple>
       </div>
     </div>
 
@@ -572,11 +609,11 @@
       <div class="card cardpad">
         <div class="section-title">Files to merge — in this order</div>
         <div id="mergeList" class="merge-list"></div>
-        <button class="add-more-btn" id="addMoreBtn" type="button">+ Add more files</button>
+        <button class="add-more-btn" id="addMoreBtn" type="button">+ Add another PDF</button>
 
         <div id="mergeSummary" class="summary-line"><b>0</b> files · <b>0</b> pages total</div>
 
-        <button id="mergeBtn" class="primary-btn" disabled>Add at least 2 files to merge</button>
+        <button id="mergeBtn" class="primary-btn" disabled>Add at least 2 PDFs to merge</button>
         <div id="mergeProgressWrap" class="progress-wrap">
           <div class="progress-track"><div id="mergeProgressFill" class="progress-fill"></div></div>
           <div class="progress-labels">
@@ -588,46 +625,265 @@
       </div>
     </div>
   </div>
+
+  <!-- ============================ 4-UP ============================ -->
+  <div id="fourupView" style="display:none">
+    <div class="card">
+      <div id="upDropzone" class="dropzone">
+        <div class="icon">
+          <svg viewBox="0 0 46 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h26l12 12v38a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f4f6f9" stroke="#c7d0db" stroke-width="2"/>
+            <path d="M30 4v10a2 2 0 0 0 2 2h10" stroke="#c7d0db" stroke-width="2" fill="none"/>
+            <rect x="9" y="24" width="12" height="9" rx="1" stroke="#c7d0db" stroke-width="1.6"/>
+            <rect x="25" y="24" width="12" height="9" rx="1" stroke="#c7d0db" stroke-width="1.6"/>
+            <rect x="9" y="37" width="12" height="9" rx="1" stroke="#c7d0db" stroke-width="1.6"/>
+            <rect x="25" y="37" width="12" height="9" rx="1" stroke="#c7d0db" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <div class="label">Drop a PDF here, or click to choose</div>
+        <div class="hint">Several slides per sheet · stays on your device</div>
+        <input type="file" id="upFileInput" accept="application/pdf,.pdf">
+      </div>
+
+      <div id="upFileBar" class="file-bar">
+        <div class="info">
+          <div class="stub"></div>
+          <div class="meta">
+            <div class="fname" id="upFileName">document.pdf</div>
+            <div class="fcount" id="upFileMeta">0 pages</div>
+          </div>
+        </div>
+        <button class="linklike" id="upChangeFile">change file</button>
+      </div>
+    </div>
+
+    <div id="upControls">
+      <div class="card cardpad">
+        <div class="section-title">Layout</div>
+        <div class="layout-grid" id="layoutGrid">
+          <button class="layout-opt active" data-layout="2x2" type="button">
+            <div class="t">2 × 2</div><div class="d">4 per sheet</div>
+          </button>
+          <button class="layout-opt" data-layout="1x2" type="button">
+            <div class="t">1 × 2</div><div class="d">2 per sheet</div>
+          </button>
+          <button class="layout-opt" data-layout="2x1" type="button">
+            <div class="t">2 × 1</div><div class="d">2 per sheet</div>
+          </button>
+          <button class="layout-opt" data-layout="3x3" type="button">
+            <div class="t">3 × 3</div><div class="d">9 per sheet</div>
+          </button>
+        </div>
+
+        <div class="section-title">Rendering</div>
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">Render quality</span>
+            <select id="upQuality">
+              <option value="72">72 DPI — fast, smaller</option>
+              <option value="100" selected>100 DPI — balanced</option>
+              <option value="150">150 DPI — high quality</option>
+              <option value="200">200 DPI — print sharp</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Gap between slides (px)</span>
+            <input type="number" id="upMargin" value="8" min="0" max="40">
+          </label>
+        </div>
+
+        <label class="print-toggle">
+          <input type="checkbox" id="upBlackBg" checked>
+          <span>
+            <span class="t">Black sheet background</span>
+            <span class="d">Fills the gaps and any transparent page areas with black — matches dark slide decks. Turn this off for ordinary white pages so the borders stay white.</span>
+          </span>
+        </label>
+
+        <div id="upSummary" class="summary-line"><b>0</b> pages</div>
+
+        <button id="upBtn" class="primary-btn" disabled>Choose a PDF to continue</button>
+        <div id="upProgressWrap" class="progress-wrap">
+          <div class="progress-track"><div id="upProgressFill" class="progress-fill"></div></div>
+          <div class="progress-labels">
+            <span id="upProgressPct">0%</span>
+            <span id="upProgressTime"></span>
+          </div>
+        </div>
+        <div id="upStatus" class="status-line"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
+<script type="module">
+/* =========================================================================
+ * SHARED SETUP
+ * ======================================================================= */
 const { PDFDocument } = PDFLib;
 
-let srcBytes = null;
-let srcName = "document.pdf";
-let pageCount = 0;
-let selected = new Set();
-let mode = "single";
-let pdfjsDocPromise = null;
+const PDFJS_VERSION = '4.4.168';
+const PDFJS_URL        = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.mjs`;
+const PDFJS_WORKER_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.mjs`;
 
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
+const pdfjsLib = await import(PDFJS_URL);
 
-// Tabs
+let workerReady = null;
+
+// Some sandboxed environments block constructing a Worker directly from a
+// cross-origin script URL. Fetching the script and running it from a blob:
+// URL (same-origin) sidesteps that restriction. Falls back to the direct
+// URL if the fetch itself is blocked (pdf.js wraps cross-origin workers).
+function ensurePdfWorker(){
+  if (!workerReady){
+    workerReady = fetch(PDFJS_WORKER_URL)
+      .then(r => { if (!r.ok) throw new Error('worker fetch failed'); return r.blob(); })
+      .then(blob => { pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob); })
+      .catch(() => { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL; });
+  }
+  return workerReady;
+}
+
+function isPdfFile(file){
+  return !!file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name));
+}
+
+function downloadBlob(bytes, filename, type){
+  downloadBlobDirect(new Blob([bytes], { type }), filename);
+}
+
+function downloadBlobDirect(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatTimeLeft(ms){
+  if (!isFinite(ms) || ms < 0) return '';
+  if (ms < 1200) return 'a few seconds left';
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s left`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}m ${s}s left`;
+}
+
+// Shared progress-bar controller used by all three tabs.
+function createProgressUI(wrapEl, fillEl, pctEl, timeEl){
+  return {
+    show(){
+      fillEl.style.width = '0%';
+      pctEl.textContent = '0%';
+      timeEl.textContent = 'estimating…';
+      wrapEl.classList.add('show');
+    },
+    hide(){ wrapEl.classList.remove('show'); },
+    update(done, total, startTime){
+      const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+      fillEl.style.width = pct + '%';
+      pctEl.textContent = pct + '%';
+      if (done <= 0){
+        timeEl.textContent = 'estimating…';
+      } else if (done >= total){
+        timeEl.textContent = 'finishing…';
+      } else {
+        const elapsed = performance.now() - startTime;
+        timeEl.textContent = formatTimeLeft((elapsed / done) * (total - done));
+      }
+    }
+  };
+}
+
+// Runs async work over a list with at most `limit` tasks in flight at once —
+// lets the browser overlap page rendering/PNG encoding instead of doing it
+// strictly one page at a time.
+async function mapWithConcurrency(items, limit, fn, onProgress){
+  const results = new Array(items.length);
+  let next = 0;
+  let done = 0;
+  async function worker(){
+    while (next < items.length){
+      const cur = next++;
+      results[cur] = await fn(items[cur], cur);
+      done++;
+      if (onProgress) onProgress(done, items.length);
+    }
+  }
+  const pool = Array.from({ length: Math.min(limit, items.length) }, worker);
+  await Promise.all(pool);
+  return results;
+}
+
+/* =========================================================================
+ * TABS
+ * ======================================================================= */
 const tabSplitBtn = document.getElementById('tabSplitBtn');
 const tabMergeBtn = document.getElementById('tabMergeBtn');
-const splitView = document.getElementById('splitView');
-const mergeView = document.getElementById('mergeView');
+const tabUpBtn    = document.getElementById('tabUpBtn');
+const splitView   = document.getElementById('splitView');
+const mergeView   = document.getElementById('mergeView');
+const fourupView  = document.getElementById('fourupView');
+
+const TAB_MAP = {
+  split:  { btn: tabSplitBtn, view: splitView },
+  merge:  { btn: tabMergeBtn, view: mergeView },
+  fourup: { btn: tabUpBtn,    view: fourupView },
+};
 
 function setActiveTab(view){
-  const isSplit = view === 'split';
-  tabSplitBtn.classList.toggle('active', isSplit);
-  tabMergeBtn.classList.toggle('active', !isSplit);
-  splitView.style.display = isSplit ? 'block' : 'none';
-  mergeView.style.display = isSplit ? 'none' : 'block';
+  for (const key of Object.keys(TAB_MAP)){
+    const isActive = key === view;
+    TAB_MAP[key].btn.classList.toggle('active', isActive);
+    TAB_MAP[key].view.style.display = isActive ? 'block' : 'none';
+  }
 }
 tabSplitBtn.addEventListener('click', () => setActiveTab('split'));
 tabMergeBtn.addEventListener('click', () => setActiveTab('merge'));
+tabUpBtn.addEventListener('click',    () => setActiveTab('fourup'));
 
-const fileBar = document.getElementById('fileBar');
-const fnameEl = document.getElementById('fname');
-const fcountEl = document.getElementById('fcount');
-const controls = document.getElementById('controls');
-const pageGrid = document.getElementById('pageGrid');
+/* =========================================================================
+ * 1) SPLIT
+ * ======================================================================= */
+let srcBytes = null;
+let srcName = 'document.pdf';
+let pageCount = 0;
+let selected = new Set();
+let mode = 'single';
+let pdfjsDocPromise = null; // lazy pdf.js doc, used for thumbnails + rendering
+
+const dropzone   = document.getElementById('dropzone');
+const fileInput  = document.getElementById('fileInput');
+const fileBar    = document.getElementById('fileBar');
+const fnameEl    = document.getElementById('fname');
+const fcountEl   = document.getElementById('fcount');
+const controls   = document.getElementById('controls');
+const pageGrid   = document.getElementById('pageGrid');
 const rangeInput = document.getElementById('rangeInput');
-const summary = document.getElementById('summary');
-const downloadBtn = document.getElementById('downloadBtn');
-const statusEl = document.getElementById('status');
+const summary    = document.getElementById('summary');
+const downloadBtn= document.getElementById('downloadBtn');
+const statusEl   = document.getElementById('status');
+
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressPct  = document.getElementById('progressPct');
+const progressTime = document.getElementById('progressTime');
+const splitProgress = createProgressUI(progressWrap, progressFill, progressPct, progressTime);
+
+function setStatus(msg, kind){
+  statusEl.textContent = msg;
+  statusEl.className = kind || '';
+}
 
 dropzone.addEventListener('click', () => fileInput.click());
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
@@ -638,10 +894,10 @@ dropzone.addEventListener('drop', e => {
   if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
-document.getElementById('changeFile').addEventListener('click', reset);
+document.getElementById('changeFile').addEventListener('click', resetSplit);
 
 async function handleFile(file){
-  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')){
+  if (!isPdfFile(file)){
     setStatus('That doesn\'t look like a PDF. Try another file.', 'err');
     return;
   }
@@ -671,7 +927,7 @@ async function handleFile(file){
   }
 }
 
-function reset(){
+function resetSplit(){
   srcBytes = null; pageCount = 0; selected = new Set(); pdfjsDocPromise = null;
   if (thumbObserver){ thumbObserver.disconnect(); thumbObserver = null; }
   resetThumbQueue();
@@ -715,6 +971,11 @@ function buildGrid(){
   }
 }
 
+/* ---------------------------------------------------------------------- *
+ * Page thumbnails — rendered lazily (only once a chip scrolls into view)
+ * and with limited concurrency, so a 500-page PDF doesn't try to render
+ * 500 canvases at once.
+ * ---------------------------------------------------------------------- */
 const THUMB_CONCURRENCY = 3;
 let thumbActive = 0;
 let thumbQueue = [];
@@ -741,10 +1002,7 @@ function fillThumbWorkers(){
 }
 
 async function renderChipThumbnail(pageIndex, chipEl){
-  const pdfjsLib = window.pdfjsLib;
-  if (!pdfjsLib) return;
-  const loadingTask = pdfjsLib.getDocument({ data: srcBytes.slice(0) });
-  const pdfjsDoc = await loadingTask.promise;
+  const pdfjsDoc = await getPdfJsDoc();
   const page = await pdfjsDoc.getPage(pageIndex + 1);
   const baseViewport = page.getViewport({ scale: 1 });
   const targetWidth = 140 * Math.min(window.devicePixelRatio || 1, 2);
@@ -756,6 +1014,7 @@ async function renderChipThumbnail(pageIndex, chipEl){
   const ctx = canvas.getContext('2d');
   await page.render({ canvasContext: ctx, viewport }).promise;
 
+  // Still present in the DOM? (guards against a very fast file change mid-render)
   if (!chipEl.isConnected) return;
   const img = chipEl.querySelector('img');
   img.src = canvas.toDataURL('image/png');
@@ -848,122 +1107,250 @@ function updateSummaryAndButton(){
         : `Download .zip (${n} file${n===1?'':'s'})`);
 }
 
+const printFriendlyCheckbox = document.getElementById('printFriendly');
 const grayscaleCheckbox = document.getElementById('grayscaleMode');
-const progressWrap = document.getElementById('progressWrap');
-const progressFill = document.getElementById('progressFill');
-const progressPct = document.getElementById('progressPct');
-const progressTime = document.getElementById('progressTime');
-
-function showProgress(){
-  progressFill.style.width = '0%';
-  progressPct.textContent = '0%';
-  progressTime.textContent = 'estimating…';
-  progressWrap.classList.add('show');
+const printFriendlyLabel = document.getElementById('printFriendlyLabel');
+function syncPrintFriendlyAvailability(){
+  const auto = grayscaleCheckbox.checked;
+  printFriendlyCheckbox.disabled = auto;
+  printFriendlyLabel.classList.toggle('is-disabled', auto);
 }
-function hideProgress(){
-  progressWrap.classList.remove('show');
-}
-function formatTimeLeft(ms){
-  if (!isFinite(ms) || ms < 0) return '';
-  if (ms < 1200) return 'a few seconds left';
-  const totalSec = Math.round(ms / 1000);
-  if (totalSec < 60) return `${totalSec}s left`;
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${m}m ${s}s left`;
-}
-function updateProgress(done, total, startTime){
-  const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
-  progressFill.style.width = pct + '%';
-  progressPct.textContent = pct + '%';
-  if (done <= 0){
-    progressTime.textContent = 'estimating…';
-  } else if (done >= total){
-    progressTime.textContent = 'finishing…';
-  } else {
-    const elapsed = performance.now() - startTime;
-    const avgPerItem = elapsed / done;
-    const remaining = avgPerItem * (total - done);
-    progressTime.textContent = formatTimeLeft(remaining);
-  }
-}
+grayscaleCheckbox.addEventListener('change', syncPrintFriendlyAvailability);
+syncPrintFriendlyAvailability();
 
 downloadBtn.addEventListener('click', async () => {
   if (!selected.size || !srcBytes) return;
   downloadBtn.disabled = true;
+  const printFriendly = printFriendlyCheckbox.checked;
   const grayscale = grayscaleCheckbox.checked;
   setStatus('Building your file…');
   try{
     const pages = Array.from(selected).sort((a,b)=>a-b);
     if (mode === 'single'){
-      const outBytes = await extractCombined(pages, grayscale);
+      const outBytes = await extractCombined(pages, printFriendly, grayscale);
       downloadBlob(outBytes, `${srcName}_split.pdf`, 'application/pdf');
       setStatus('Done — check your downloads.', 'ok');
     } else {
-      const zipBlob = await extractSeparateZip(pages, grayscale);
+      const zipBlob = await extractSeparateZip(pages, printFriendly, grayscale);
       downloadBlobDirect(zipBlob, `${srcName}_split.zip`);
       setStatus('Done — check your downloads.', 'ok');
     }
   }catch(err){
     console.error(err);
-    setStatus(`Couldn't build the file. Try again.`, 'err');
+    const msg = (err && err.message) ? err.message : 'unknown error';
+    setStatus(`Couldn't build the file (${msg}). Try again, or turn off grayscale / the dark-background toggle.`, 'err');
   }finally{
-    hideProgress();
+    splitProgress.hide();
     downloadBtn.disabled = selected.size === 0;
     updateSummaryAndButton();
   }
 });
 
-async function extractCombined(pageNums, grayscale){
+async function getPdfJsDoc(){
+  if (!pdfjsDocPromise){
+    await ensurePdfWorker();
+    // pdf.js needs its own copy of the bytes (it detaches the buffer)
+    pdfjsDocPromise = pdfjsLib.getDocument({ data: srcBytes.slice(0) }).promise;
+  }
+  return pdfjsDocPromise;
+}
+
+// Renders a page at a small size and samples pixels to decide if the background is dark.
+// Kept deliberately cheap (tiny canvas, sparse sampling) since it runs on every page.
+async function isPageDark(pdfjsDoc, pageIndex){
+  const page = await pdfjsDoc.getPage(pageIndex + 1);
+  const viewport = page.getViewport({ scale: 0.12 });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.floor(viewport.width));
+  canvas.height = Math.max(1, Math.floor(viewport.height));
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let total = 0, count = 0;
+  for (let i = 0; i < data.length; i += 16){ // sparse sample, RGB every 4th pixel
+    total += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    count++;
+  }
+  const avgLuma = count ? total / count : 255;
+  return avgLuma < 110; // dark background threshold
+}
+
+// Turns raw RGBA pixel data into clean, high-contrast, print-safe grayscale in place.
+// Plain luminance conversion alone tends to leave scanned-looking pages full of murky
+// mid-grays, and very light/dark values that a laser printer or copier won't render
+// distinctly. This does three things to fix that:
+//   1. Per-page auto-levels: stretches the page's actual light-to-dark range to fill
+//      the full 0-255 span, clipping a tiny fraction of outlier pixels first so a few
+//      stray dark/light specks don't throw off the stretch.
+//   2. A gentle S-curve for a bit more midtone punch without crushing detail.
+//   3. A hard clamp near the extremes so near-white/near-black pixels resolve to true
+//      white or true black — nothing prints as a faint, barely-there gray.
+function applyCleanGrayscale(d){
+  const pixelCount = d.length / 4;
+  const lum = new Uint8Array(pixelCount);
+  const hist = new Uint32Array(256);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++){
+    const v = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) | 0;
+    lum[p] = v;
+    hist[v]++;
+  }
+
+  const clipCount = Math.max(1, Math.round(pixelCount * 0.006)); // ~0.6% at each end
+  let lo = 0, acc = 0;
+  for (; lo < 256; lo++){ acc += hist[lo]; if (acc >= clipCount) break; }
+  let hi = 255; acc = 0;
+  for (; hi >= 0; hi--){ acc += hist[hi]; if (acc >= clipCount) break; }
+  if (hi <= lo){ lo = 0; hi = 255; } // degenerate (near-blank) page — skip the stretch
+  const range = hi - lo;
+
+  const lut = new Uint8ClampedArray(256);
+  for (let v = 0; v < 256; v++){
+    let out = ((v - lo) / range) * 255;
+    if (out < 0) out = 0; else if (out > 255) out = 255;
+    const t = out / 255;
+    out = 255 * (t*t*(3 - 2*t) * 0.35 + t * 0.65); // gentle S-curve
+    if (out <= 10) out = 0;
+    else if (out >= 245) out = 255;
+    lut[v] = out;
+  }
+
+  for (let i = 0, p = 0; i < d.length; i += 4, p++){
+    const g = lut[lum[p]];
+    d[i] = g; d[i+1] = g; d[i+2] = g;
+  }
+}
+
+// Renders a page at print resolution, optionally inverting (dark background -> white,
+// without touching the underlying text) and/or converting to clean grayscale.
+async function renderProcessedPage(pdfjsDoc, pageIndex, { invert = false, grayscale = false } = {}){
+  const page = await pdfjsDoc.getPage(pageIndex + 1);
+  const scale = grayscale ? 2.0 : 1.8; // a touch sharper for grayscale so text edges stay crisp
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = imageData.data;
+
+  if (invert){
+    for (let i = 0; i < d.length; i += 4){
+      d[i]   = 255 - d[i];
+      d[i+1] = 255 - d[i+1];
+      d[i+2] = 255 - d[i+2];
+    }
+  }
+  if (grayscale){
+    applyCleanGrayscale(d);
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  const pngBytes = await new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob){ reject(new Error('canvas toBlob failed')); return; }
+      blob.arrayBuffer().then(resolve).catch(reject);
+    }, 'image/png');
+  });
+  const nativeViewport = page.getViewport({ scale: 1 });
+  return { pngBytes, width: nativeViewport.width, height: nativeViewport.height };
+}
+
+// Figures out, for one page, whether it needs rendering (grayscale and/or dark-background
+// flip) — this is the expensive part and is safe to run concurrently since each call uses
+// its own canvas.
+async function preparePage(pdfjsDoc, pageIndex, printFriendly, grayscale){
+  if (grayscale){
+    // Grayscale is meant for printing: always check for a dark background and flip it to
+    // white (with the content on it rendered dark) regardless of the separate toggle below,
+    // so a black slide never comes out as a solid black (or solid dark-gray) printed page.
+    const invert = await isPageDark(pdfjsDoc, pageIndex);
+    const { pngBytes, width, height } = await renderProcessedPage(pdfjsDoc, pageIndex, { invert, grayscale: true });
+    return { type: 'image', pageIndex, pngBytes, width, height };
+  }
+  if (printFriendly){
+    const dark = await isPageDark(pdfjsDoc, pageIndex);
+    if (dark){
+      const { pngBytes, width, height } = await renderProcessedPage(pdfjsDoc, pageIndex, { invert: true, grayscale: false });
+      return { type: 'image', pageIndex, pngBytes, width, height };
+    }
+  }
+  return { type: 'vector', pageIndex };
+}
+
+// Adds a prepared page into an output document. Kept sequential per document since
+// pdf-lib mutates shared internal state — the expensive rendering already happened in preparePage.
+async function addPreparedPage(outDoc, srcDoc, prepared){
+  if (prepared.type === 'image'){
+    const png = await outDoc.embedPng(prepared.pngBytes);
+    const outPage = outDoc.addPage([prepared.width, prepared.height]);
+    outPage.drawImage(png, { x: 0, y: 0, width: prepared.width, height: prepared.height });
+  } else {
+    const [copied] = await outDoc.copyPages(srcDoc, [prepared.pageIndex]);
+    outDoc.addPage(copied);
+  }
+}
+
+const RENDER_CONCURRENCY = 3;
+
+async function extractCombined(pageNums, printFriendly, grayscale){
   const srcDoc = await PDFDocument.load(srcBytes, { ignoreEncryption: true });
   const outDoc = await PDFDocument.create();
-  for (const n of pageNums){
-    const [copied] = await outDoc.copyPages(srcDoc, [n - 1]);
-    outDoc.addPage(copied);
+  const needsRender = printFriendly || grayscale;
+  const pdfjsDoc = needsRender ? await getPdfJsDoc() : null;
+
+  if (needsRender){
+    setStatus(`Rendering ${pageNums.length} page${pageNums.length===1?'':'s'}${grayscale ? ' to grayscale' : ''}…`);
+    splitProgress.show();
+  }
+  const startTime = performance.now();
+  const prepared = await mapWithConcurrency(
+    pageNums, RENDER_CONCURRENCY,
+    (n) => preparePage(pdfjsDoc, n - 1, printFriendly, grayscale),
+    needsRender ? (done, total) => splitProgress.update(done, total, startTime) : null
+  );
+
+  if (needsRender) setStatus('Assembling PDF…');
+  for (const p of prepared){
+    await addPreparedPage(outDoc, srcDoc, p);
   }
   return await outDoc.save();
 }
 
-async function extractSeparateZip(pageNums, grayscale){
+async function extractSeparateZip(pageNums, printFriendly, grayscale){
   const srcDoc = await PDFDocument.load(srcBytes, { ignoreEncryption: true });
+  const needsRender = printFriendly || grayscale;
+  const pdfjsDoc = needsRender ? await getPdfJsDoc() : null;
   const zip = new JSZip();
   const pad = String(pageCount).length;
-  for (const n of pageNums){
+
+  if (needsRender){
+    setStatus(`Rendering ${pageNums.length} page${pageNums.length===1?'':'s'}${grayscale ? ' to grayscale' : ''}…`);
+    splitProgress.show();
+  }
+  const startTime = performance.now();
+  const prepared = await mapWithConcurrency(
+    pageNums, RENDER_CONCURRENCY,
+    (n) => preparePage(pdfjsDoc, n - 1, printFriendly, grayscale),
+    needsRender ? (done, total) => splitProgress.update(done, total, startTime) : null
+  );
+
+  if (needsRender) setStatus('Packing files…');
+  for (const p of prepared){
     const outDoc = await PDFDocument.create();
-    const [copied] = await outDoc.copyPages(srcDoc, [n - 1]);
-    outDoc.addPage(copied);
+    await addPreparedPage(outDoc, srcDoc, p);
     const bytes = await outDoc.save();
-    const label = String(n).padStart(pad, '0');
+    const label = String(p.pageIndex + 1).padStart(pad, '0');
     zip.file(`${srcName}_page_${label}.pdf`, bytes);
   }
   return await zip.generateAsync({ type: 'blob' });
 }
 
-function downloadBlob(bytes, filename, type){
-  const blob = new Blob([bytes], { type });
-  downloadBlobDirect(blob, filename);
-}
-
-function downloadBlobDirect(blob, filename){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
-
-function setStatus(msg, kind){
-  statusEl.textContent = msg;
-  statusEl.className = kind || '';
-}
-
-/* ============================================================
-   MERGE PDFs + IMAGES
-   ============================================================ */
-
+/* =========================================================================
+ * 2) MERGE
+ * ======================================================================= */
 const mergeDropzone = document.getElementById('mergeDropzone');
 const mergeFileInput = document.getElementById('mergeFileInput');
 const mergeControls = document.getElementById('mergeControls');
@@ -976,9 +1363,15 @@ const mergeProgressWrap = document.getElementById('mergeProgressWrap');
 const mergeProgressFill = document.getElementById('mergeProgressFill');
 const mergeProgressPct = document.getElementById('mergeProgressPct');
 const mergeProgressTime = document.getElementById('mergeProgressTime');
+const mergeProgress = createProgressUI(mergeProgressWrap, mergeProgressFill, mergeProgressPct, mergeProgressTime);
 
-let mergeFiles = [];
+let mergeFiles = []; // { id, name, bytes: ArrayBuffer, pageCount }
 let mergeIdSeq = 1;
+
+function setMergeStatus(msg, kind){
+  mergeStatusEl.textContent = msg;
+  mergeStatusEl.className = 'status-line ' + (kind || '');
+}
 
 mergeDropzone.addEventListener('click', () => mergeFileInput.click());
 mergeDropzone.addEventListener('dragover', e => { e.preventDefault(); mergeDropzone.classList.add('drag'); });
@@ -995,48 +1388,27 @@ mergeFileInput.addEventListener('change', e => {
 addMoreBtn.addEventListener('click', () => mergeFileInput.click());
 
 async function addMergeFiles(fileList){
-  const files = Array.from(fileList);
+  const files = Array.from(fileList).filter(isPdfFile);
+  const skipped = fileList.length - files.length;
+
   if (!files.length){
-    setMergeStatus('No files selected.', 'err');
+    setMergeStatus('That doesn\'t look like a PDF. Try another file.', 'err');
     return;
   }
 
-  setMergeStatus('Reading files…');
+  setMergeStatus('Reading file' + (files.length === 1 ? '' : 's') + '…');
   let added = 0, failed = 0;
-
   for (const file of files){
     try{
       const buf = await file.arrayBuffer();
-      const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      const isImage = file.type.startsWith('image/');
-      
-      if (isPDF){
-        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
-        mergeFiles.push({
-          id: mergeIdSeq++,
-          name: file.name,
-          bytes: buf,
-          pageCount: doc.getPageCount(),
-          type: 'pdf',
-          file: file
-        });
-        added++;
-      } else if (isImage){
-        // Convert image to data URL for embedding
-        const dataUrl = await fileToDataURL(file);
-        mergeFiles.push({
-          id: mergeIdSeq++,
-          name: file.name,
-          bytes: buf,
-          pageCount: 1,
-          type: 'image',
-          file: file,
-          dataUrl: dataUrl
-        });
-        added++;
-      } else {
-        failed++;
-      }
+      const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+      mergeFiles.push({
+        id: mergeIdSeq++,
+        name: file.name,
+        bytes: buf,
+        pageCount: doc.getPageCount(),
+      });
+      added++;
     }catch(err){
       console.error(err);
       failed++;
@@ -1048,21 +1420,14 @@ async function addMergeFiles(fileList){
   renderMergeList();
 
   if (failed && added){
-    setMergeStatus(`Added ${added} file${added===1?'':'s'} — ${failed} couldn't be read.`, 'err');
+    setMergeStatus(`Added ${added} file${added===1?'':'s'} — ${failed} couldn't be read (corrupted or password protected).`, 'err');
   } else if (failed){
-    setMergeStatus(`Couldn't read ${failed} file${failed===1?'':'s'}. Only PDF and image files are supported.`, 'err');
+    setMergeStatus(`Couldn't read ${failed} file${failed===1?'':'s'} — it may be corrupted or password protected.`, 'err');
+  } else if (skipped){
+    setMergeStatus(`Added ${added} PDF${added===1?'':'s'}. Skipped ${skipped} non-PDF file${skipped===1?'':'s'}.`);
   } else {
     setMergeStatus('');
   }
-}
-
-function fileToDataURL(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 function renderMergeList(){
@@ -1070,14 +1435,11 @@ function renderMergeList(){
   mergeFiles.forEach((f, i) => {
     const item = document.createElement('div');
     item.className = 'merge-item';
-    const badge = f.type === 'pdf' 
-      ? '<span class="file-badge pdf">PDF</span>' 
-      : '<span class="file-badge image">IMAGE</span>';
     item.innerHTML = `
       <div class="idx">${i + 1}</div>
       <div class="stub"></div>
       <div class="meta">
-        <div class="fname">${escapeHtml(f.name)} ${badge}</div>
+        <div class="fname">${escapeHtml(f.name)}</div>
         <div class="fcount">${f.pageCount} page${f.pageCount === 1 ? '' : 's'}</div>
       </div>
       <div class="merge-actions">
@@ -1091,12 +1453,6 @@ function renderMergeList(){
     mergeListEl.appendChild(item);
   });
   updateMergeSummary();
-}
-
-function escapeHtml(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 function moveMergeFile(id, dir){
@@ -1122,84 +1478,274 @@ function updateMergeSummary(){
   mergeSummaryEl.innerHTML = `<b>${mergeFiles.length}</b> file${mergeFiles.length===1?'':'s'} · <b>${totalPages}</b> page${totalPages===1?'':'s'} total`;
   mergeBtn.disabled = mergeFiles.length < 2;
   mergeBtn.textContent = mergeFiles.length === 0
-    ? 'Add at least 2 files to merge'
+    ? 'Add at least 2 PDFs to merge'
     : mergeFiles.length === 1
-      ? 'Add one more file to merge'
+      ? 'Add one more PDF to merge'
       : `Merge into one PDF (${totalPages} page${totalPages===1?'':'s'})`;
-}
-
-function showMergeProgress(){
-  mergeProgressFill.style.width = '0%';
-  mergeProgressPct.textContent = '0%';
-  mergeProgressTime.textContent = 'estimating…';
-  mergeProgressWrap.classList.add('show');
-}
-function hideMergeProgress(){
-  mergeProgressWrap.classList.remove('show');
-}
-function updateMergeProgress(done, total, startTime){
-  const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
-  mergeProgressFill.style.width = pct + '%';
-  mergeProgressPct.textContent = pct + '%';
-  if (done <= 0){
-    mergeProgressTime.textContent = 'estimating…';
-  } else if (done >= total){
-    mergeProgressTime.textContent = 'finishing…';
-  } else {
-    const elapsed = performance.now() - startTime;
-    const avgPerItem = elapsed / done;
-    mergeProgressTime.textContent = formatTimeLeft(avgPerItem * (total - done));
-  }
 }
 
 mergeBtn.addEventListener('click', async () => {
   if (mergeFiles.length < 2) return;
   mergeBtn.disabled = true;
   setMergeStatus(`Merging ${mergeFiles.length} files…`);
-  showMergeProgress();
+  mergeProgress.show();
   const startTime = performance.now();
   try{
     const outDoc = await PDFDocument.create();
     let done = 0;
-    
     for (const f of mergeFiles){
-      if (f.type === 'pdf'){
-        const srcDoc = await PDFDocument.load(f.bytes.slice(0), { ignoreEncryption: true });
-        const copiedPages = await outDoc.copyPages(srcDoc, srcDoc.getPageIndices());
-        copiedPages.forEach(p => outDoc.addPage(p));
-      } else if (f.type === 'image'){
-        // Embed image as PNG
-        const pngImage = await outDoc.embedPng(f.dataUrl);
-        const page = outDoc.addPage([pngImage.width, pngImage.height]);
-        page.drawImage(pngImage, {
-          x: 0,
-          y: 0,
-          width: pngImage.width,
-          height: pngImage.height,
-        });
-      }
+      const srcDoc = await PDFDocument.load(f.bytes.slice(0), { ignoreEncryption: true });
+      const copiedPages = await outDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+      copiedPages.forEach(p => outDoc.addPage(p));
       done++;
-      updateMergeProgress(done, mergeFiles.length, startTime);
+      mergeProgress.update(done, mergeFiles.length, startTime);
     }
-    
     setMergeStatus('Assembling PDF…');
     const outBytes = await outDoc.save();
     downloadBlob(outBytes, 'merged.pdf', 'application/pdf');
     setMergeStatus('Done — check your downloads.', 'ok');
   }catch(err){
     console.error(err);
-    setMergeStatus(`Couldn't merge the files.`, 'err');
+    const msg = (err && err.message) ? err.message : 'unknown error';
+    setMergeStatus(`Couldn't merge the files (${msg}).`, 'err');
   }finally{
-    hideMergeProgress();
+    mergeProgress.hide();
     mergeBtn.disabled = mergeFiles.length < 2;
   }
 });
 
-function setMergeStatus(msg, kind){
-  mergeStatusEl.textContent = msg;
-  mergeStatusEl.className = 'status-line ' + (kind || '');
+/* =========================================================================
+ * 3) N-UP LAYOUT
+ * ======================================================================= */
+const upDropzone   = document.getElementById('upDropzone');
+const upFileInput  = document.getElementById('upFileInput');
+const upFileBar    = document.getElementById('upFileBar');
+const upFileNameEl = document.getElementById('upFileName');
+const upFileMetaEl = document.getElementById('upFileMeta');
+const upControls   = document.getElementById('upControls');
+const layoutGrid   = document.getElementById('layoutGrid');
+const upQuality    = document.getElementById('upQuality');
+const upMargin     = document.getElementById('upMargin');
+const upBlackBg    = document.getElementById('upBlackBg');
+const upSummaryEl  = document.getElementById('upSummary');
+const upBtn        = document.getElementById('upBtn');
+const upStatusEl   = document.getElementById('upStatus');
+const upProgressWrap = document.getElementById('upProgressWrap');
+const upProgressFill = document.getElementById('upProgressFill');
+const upProgressPct  = document.getElementById('upProgressPct');
+const upProgressTime = document.getElementById('upProgressTime');
+const upProgress = createProgressUI(upProgressWrap, upProgressFill, upProgressPct, upProgressTime);
+
+const LAYOUTS = {
+  '2x2': { cols: 2, rows: 2 },
+  '1x2': { cols: 1, rows: 2 },
+  '2x1': { cols: 2, rows: 1 },
+  '3x3': { cols: 3, rows: 3 },
+};
+
+let upPdfDoc = null;                 // pdf.js document for the 4-up tab
+let upFile = null;                   // the File the user picked
+let upLayoutKey = '2x2';
+let upBusy = false;
+
+function setUpStatus(msg, kind){
+  upStatusEl.textContent = msg;
+  upStatusEl.className = 'status-line ' + (kind || '');
 }
 
+upDropzone.addEventListener('click', () => upFileInput.click());
+upDropzone.addEventListener('dragover', e => { e.preventDefault(); upDropzone.classList.add('drag'); });
+upDropzone.addEventListener('dragleave', () => upDropzone.classList.remove('drag'));
+upDropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  upDropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) handleUpFile(e.dataTransfer.files[0]);
+});
+upFileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleUpFile(e.target.files[0]);
+  upFileInput.value = '';
+});
+document.getElementById('upChangeFile').addEventListener('click', resetUp);
+
+layoutGrid.querySelectorAll('.layout-opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    layoutGrid.querySelectorAll('.layout-opt').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    upLayoutKey = opt.dataset.layout;
+    updateUpSummary();
+  });
+});
+
+upQuality.addEventListener('change', updateUpSummary);
+upMargin.addEventListener('change', updateUpSummary);
+
+async function handleUpFile(file){
+  if (!isPdfFile(file)){
+    setUpStatus('That doesn\'t look like a PDF. Try another file.', 'err');
+    return;
+  }
+  setUpStatus('Reading file…');
+  try{
+    await ensurePdfWorker();
+    const buf = await file.arrayBuffer();
+    upPdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+    upFile = file;
+
+    upFileNameEl.textContent = file.name;
+    upFileMetaEl.textContent = upPdfDoc.numPages + (upPdfDoc.numPages === 1 ? ' page' : ' pages');
+    upDropzone.style.display = 'none';
+    upFileBar.style.display = 'flex';
+    upControls.style.display = 'block';
+
+    updateUpSummary();
+    setUpStatus('');
+  }catch(err){
+    console.error(err);
+    upPdfDoc = null;
+    upFile = null;
+    setUpStatus('Couldn\'t read that PDF — it may be corrupted or password protected.', 'err');
+  }
+}
+
+function resetUp(){
+  if (upBusy) return;
+  upPdfDoc = null;
+  upFile = null;
+  upDropzone.style.display = 'block';
+  upFileBar.style.display = 'none';
+  upControls.style.display = 'none';
+  upBtn.disabled = true;
+  upBtn.textContent = 'Choose a PDF to continue';
+  upSummaryEl.innerHTML = '<b>0</b> pages';
+  setUpStatus('');
+}
+
+function updateUpSummary(){
+  if (!upPdfDoc){
+    upSummaryEl.innerHTML = '<b>0</b> pages';
+    upBtn.disabled = true;
+    upBtn.textContent = 'Choose a PDF to continue';
+    return;
+  }
+  const { cols, rows } = LAYOUTS[upLayoutKey];
+  const perSheet = cols * rows;
+  const pages = upPdfDoc.numPages;
+  const sheets = Math.ceil(pages / perSheet);
+  upSummaryEl.innerHTML =
+    `<b>${pages}</b> page${pages===1?'':'s'} → <b>${sheets}</b> sheet${sheets===1?'':'s'} at ${cols} × ${rows}`;
+  upBtn.disabled = false;
+  upBtn.textContent = `Create ${cols} × ${rows} PDF (${sheets} page${sheets===1?'':'s'})`;
+}
+
+upBtn.addEventListener('click', runUpConversion);
+
+async function runUpConversion(){
+  if (!upPdfDoc || upBusy) return;
+  upBusy = true;
+  upBtn.disabled = true;
+
+  const { cols, rows } = LAYOUTS[upLayoutKey];
+  const perSheet = cols * rows;
+  const dpi = parseInt(upQuality.value, 10) || 100;
+  const gap = Math.max(0, Math.min(40, parseInt(upMargin.value, 10) || 0));
+  const bg  = upBlackBg.checked ? '#000000' : '#ffffff';
+  const totalPages = upPdfDoc.numPages;
+  const numSheets = Math.ceil(totalPages / perSheet);
+
+  setUpStatus('Analyzing page size…');
+  upProgress.show();
+  const startTime = performance.now();
+  upProgress.update(0, totalPages, startTime);
+
+  try{
+    // Page box comes from page 1; any differently-sized pages are scaled to fit it.
+    const firstPage = await upPdfDoc.getPage(1);
+    const vp1 = firstPage.getViewport({ scale: dpi / 72 });
+    const pageW = Math.round(vp1.width);
+    const pageH = Math.round(vp1.height);
+
+    const sheetW = cols * pageW + (cols + 1) * gap;
+    const sheetH = rows * pageH + (rows + 1) * gap;
+
+    // PDF units (points). 1 px at the chosen DPI = 72/DPI points.
+    const ptPerPx = 72 / dpi;
+    const pdfW = sheetW * ptPerPx;
+    const pdfH = sheetH * ptPerPx;
+    const orientation = pdfW >= pdfH ? 'l' : 'p';
+
+    const doc = new window.jspdf.jsPDF({
+      orientation,
+      unit: 'pt',
+      format: [pdfW, pdfH],
+      compress: true
+    });
+
+    const pageCanvas = document.createElement('canvas');
+    const pageCtx = pageCanvas.getContext('2d', { alpha: false });
+
+    const sheetCanvas = document.createElement('canvas');
+    sheetCanvas.width = sheetW;
+    sheetCanvas.height = sheetH;
+    const sheetCtx = sheetCanvas.getContext('2d', { alpha: false });
+
+    let rendered = 0;
+
+    for (let s = 0; s < numSheets; s++){
+      const startPage = s * perSheet + 1;
+      const endPage = Math.min(startPage + perSheet - 1, totalPages);
+      setUpStatus(`Sheet ${s + 1} of ${numSheets} — pages ${startPage}–${endPage}…`);
+
+      sheetCtx.fillStyle = bg;
+      sheetCtx.fillRect(0, 0, sheetW, sheetH);
+
+      for (let i = 0; i < perSheet; i++){
+        const pageNum = startPage + i;
+        if (pageNum > totalPages) break;
+
+        const page = await upPdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: dpi / 72 });
+
+        pageCanvas.width  = Math.max(1, Math.round(viewport.width));
+        pageCanvas.height = Math.max(1, Math.round(viewport.height));
+        pageCtx.fillStyle = bg;
+        pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+        await page.render({ canvasContext: pageCtx, viewport }).promise;
+
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = gap + col * (pageW + gap);
+        const y = gap + row * (pageH + gap);
+        sheetCtx.drawImage(pageCanvas, x, y, pageW, pageH);
+
+        rendered++;
+        upProgress.update(rendered, totalPages, startTime);
+      }
+
+      // JPEG keeps the assembled sheet small compared to PNG
+      const imgData = sheetCanvas.toDataURL('image/jpeg', 0.92);
+      if (s > 0) doc.addPage([pdfW, pdfH], orientation);
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+    }
+
+    upProgress.update(totalPages, totalPages, startTime);
+    setUpStatus('Generating download…');
+
+    const baseName = upFile.name.replace(/\.pdf$/i, '');
+    const outName = `${baseName}_${cols}x${rows}.pdf`;
+    doc.save(outName);
+
+    setUpStatus(`Done — “${outName}” (${numSheets} page${numSheets===1?'':'s'}) downloaded.`, 'ok');
+  }catch(err){
+    console.error(err);
+    const msg = (err && err.message) ? err.message : 'unknown error';
+    setUpStatus(`Couldn't build the file (${msg}).`, 'err');
+  }finally{
+    upProgress.hide();
+    upBusy = false;
+    updateUpSummary();
+  }
+}
 </script>
 </body>
 </html>
